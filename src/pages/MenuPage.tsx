@@ -1,18 +1,29 @@
-import { useState } from "react";
-import { Search, Plus, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Plus, Sparkles, Coffee, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonGrid } from "@/components/ui/skeleton-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { menuItems, categories } from "@/data/menu";
 import { useCart } from "@/context/CartContext";
 import { useInventory } from "@/context/InventoryContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const { addItem } = useCart();
   const { checkAvailability } = useInventory();
+  const prefersReducedMotion = useReducedMotion() || false;
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filtered = menuItems.filter((item) => {
     const matchCat = activeCategory === "all" || item.category === activeCategory;
@@ -45,24 +56,34 @@ export default function MenuPage() {
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center mb-10">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vibe-purple/10 border border-vibe-purple/30 text-vibe-purple text-xs font-mono uppercase tracking-wider mb-4">
-            <Sparkles className="h-3 w-3" /> Explore
-          </span>
-          <h1 className="font-serif text-5xl md:text-7xl mb-4">
-            THE <span className="text-gold-gradient">MENU</span>
-          </h1>
-          <p className="text-muted-foreground max-w-md mx-auto">From signature pour overs to viral matcha — something for every vibe.</p>
-        </motion.div>
+        <PageHeader
+          badge={{ text: "Explore", icon: Sparkles }}
+          title="THE"
+          highlight="MENU"
+          description="From signature pour overs to viral matcha — something for every vibe."
+        />
 
         {/* Search */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative max-w-md mx-auto mb-8">
+        <motion.div initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: prefersReducedMotion ? 0 : 0.2 }} className="relative max-w-md mx-auto mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search the menu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 bg-card border-border rounded-full h-12" />
+          <Input
+            placeholder="Search the menu..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-11 pr-10 bg-card border-border rounded-full h-12"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-secondary rounded-full transition-colors"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
         </motion.div>
 
         {/* Categories */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-wrap gap-2 justify-center mb-10">
+        <motion.div initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: prefersReducedMotion ? 0 : 0.3 }} className="flex flex-wrap gap-2 justify-center mb-10">
           <button onClick={() => setActiveCategory("all")} className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${activeCategory === "all" ? "bg-vibe-purple text-white shadow-lg shadow-vibe-purple/25" : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"}`}>All</button>
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${activeCategory === cat.id ? "bg-vibe-purple text-white shadow-lg shadow-vibe-purple/25" : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"}`}>
@@ -77,9 +98,9 @@ export default function MenuPage() {
             {filtered.map((item, i) => {
               const available = isAvailable(item);
               return (
-                <motion.div key={item.id} layout initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.03, duration: 0.4 }} whileHover={{ y: -6 }} className="glass-card rounded-2xl overflow-hidden group relative">
+                <motion.div key={item.id} layout initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }} transition={{ delay: prefersReducedMotion ? 0 : i * 0.03, duration: prefersReducedMotion ? 0 : 0.4 }} whileHover={prefersReducedMotion ? {} : { y: -6 }} className="glass-card rounded-2xl overflow-hidden group relative">
                   <div className="aspect-[4/3] overflow-hidden relative">
-                    <motion.img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" whileHover={{ scale: 1.1 }} transition={{ duration: 0.5 }} />
+                    <motion.img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" whileHover={prefersReducedMotion ? {} : { scale: 1.1 }} transition={{ duration: prefersReducedMotion ? 0 : 0.5 }} />
                     {!available && (
                       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
                         <span className="text-sm font-bold text-neon-pink font-mono uppercase">Sold Out 😭</span>
@@ -107,12 +128,23 @@ export default function MenuPage() {
           </AnimatePresence>
         </div>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-20 text-muted-foreground">
-            <span className="text-4xl block mb-4">🤷</span>
-            No items found matching your search.
-          </div>
-        )}
+        {/* Loading State */}
+        {isLoading ? (
+          <SkeletonGrid count={6} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={Coffee}
+            title="No items found"
+            description={`We couldn't find any items matching "${search}". Try a different search term or browse all categories.`}
+            action={{
+              label: "Clear Search",
+              onClick: () => {
+                setSearch("");
+                setActiveCategory("all");
+              },
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

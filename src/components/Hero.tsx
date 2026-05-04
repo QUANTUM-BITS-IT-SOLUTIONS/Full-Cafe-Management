@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Volume2, VolumeX, Menu, X } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
@@ -8,72 +8,68 @@ export function Hero() {
   const [isMuted, setIsMuted] = useState(true)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [videoError, setVideoError] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const prefersReducedMotion = useReducedMotion() || false
 
   // Scroll detection
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY
-      setIsScrolled(scrollTop > 50) // Show background after 50px scroll
+      setIsScrolled(scrollTop > 50)
     }
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Ensure video is muted immediately on load to prevent any audio
+  // Video setup with proper event handling and cleanup
   useEffect(() => {
-    if (videoRef.current) {
-      console.log('Video element found, setting up...')
-      videoRef.current.volume = 0
-      videoRef.current.muted = true
-      videoRef.current.defaultMuted = true
-      
-      // Add event listeners for debugging
-      videoRef.current.addEventListener('loadstart', () => console.log('Video: loadstart'))
-      videoRef.current.addEventListener('loadedmetadata', () => console.log('Video: loadedmetadata'))
-      videoRef.current.addEventListener('canplay', () => console.log('Video: canplay'))
-      videoRef.current.addEventListener('playing', () => console.log('Video: playing'))
-      videoRef.current.addEventListener('error', (e) => console.error('Video error:', e))
-      
-      // Force mute on play
-      videoRef.current.addEventListener('play', () => {
-        if (videoRef.current) {
-          console.log('Video play event fired')
-          videoRef.current.muted = isMuted
-          videoRef.current.volume = isMuted ? 0 : 0.7
-        }
-      })
-      
-      // Try to play the video
-      const playPromise = videoRef.current.play()
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => console.log('Video autoplay successful'))
-          .catch(error => console.error('Video autoplay failed:', error))
-      }
+    const video = videoRef.current
+    if (!video) return
+
+    video.volume = 0
+    video.muted = true
+    video.defaultMuted = true
+
+    const handleError = () => setVideoError(true)
+    const handlePlay = () => {
+      video.muted = isMuted
+      video.volume = isMuted ? 0 : 0.7
+    }
+
+    video.addEventListener('error', handleError)
+    video.addEventListener('play', handlePlay)
+
+    // Try to play the video
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise.catch(() => setVideoError(true))
+    }
+
+    return () => {
+      video.removeEventListener('error', handleError)
+      video.removeEventListener('play', handlePlay)
     }
   }, [])
 
   // Update video mute state when isMuted changes
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted
-      videoRef.current.volume = isMuted ? 0 : 0.7
+    const video = videoRef.current
+    if (video) {
+      video.muted = isMuted
+      video.volume = isMuted ? 0 : 0.7
     }
   }, [isMuted])
 
   // Handle body scroll lock when mobile menu is open
   useEffect(() => {
+    const originalOverflow = document.body.style.overflow
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
     }
-
-    // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = originalOverflow
     }
   }, [isMobileMenuOpen])
 
@@ -113,10 +109,10 @@ export function Hero() {
 
       {/* Full-Width Navbar */}
       <motion.nav
-        initial={{ opacity: 0, y: -30 }}
+        initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-        className="fixed top-0 left-0 right-0 w-full z-[110]"
+        transition={{ duration: prefersReducedMotion ? 0 : 0.8, delay: prefersReducedMotion ? 0 : 0.3 }}
+        className="fixed top-0 left-0 right-0 w-full z-50"
       >
         <div 
           className={`w-full px-6 sm:px-8 lg:px-12 py-4 transition-all duration-300 ease-out ${
@@ -128,10 +124,10 @@ export function Hero() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
               className="flex items-center cursor-pointer"
               onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' })
+                window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
               }}
             >
               <span className="font-bagel text-white text-xl tracking-wider">MOJJU</span>
@@ -193,11 +189,11 @@ export function Hero() {
               
               {/* CTA Button - Hidden on mobile */}
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+                whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
                 onClick={() => {
                   const contactSection = document.getElementById('contact')
-                  contactSection?.scrollIntoView({ behavior: 'smooth' })
+                  contactSection?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
                 }}
                 className="hidden sm:block bg-red-600 backdrop-blur-sm text-white font-semibold px-6 py-3 rounded-md hover:bg-red-700 gentle-animation ml-4 cursor-pointer"
               >
@@ -207,7 +203,7 @@ export function Hero() {
               {/* Mobile Hamburger Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden glass-effect p-3 rounded-full text-white hover:bg-white/20 active:bg-white/30 gentle-animation cursor-pointer z-[120] relative"
+                className="md:hidden glass-effect p-3 rounded-full text-white hover:bg-white/20 active:bg-white/30 gentle-animation cursor-pointer z-50 relative"
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -219,11 +215,11 @@ export function Hero() {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-md z-[80] cursor-pointer"
+          exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-md z-40 cursor-pointer"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -232,8 +228,8 @@ export function Hero() {
       <motion.div
         initial={{ x: '100%' }}
         animate={{ x: isMobileMenuOpen ? '0%' : '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="md:hidden fixed top-0 right-0 h-full w-72 max-w-[85vw] bg-black/90 backdrop-blur-xl border-l border-white/10 z-[90] mobile-menu-panel pointer-events-auto"
+        transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
+        className="md:hidden fixed top-0 right-0 h-full w-72 max-w-[85vw] bg-black/90 backdrop-blur-xl border-l border-white/10 z-50 mobile-menu-panel pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col h-full">
@@ -289,11 +285,11 @@ export function Hero() {
 
             {/* Mobile CTA Button */}
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+              whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
               onClick={() => {
                 const contactSection = document.getElementById('contact')
-                contactSection?.scrollIntoView({ behavior: 'smooth' })
+                contactSection?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
                 setIsMobileMenuOpen(false)
               }}
               className="bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 active:bg-red-800 gentle-animation mt-8 cursor-pointer"

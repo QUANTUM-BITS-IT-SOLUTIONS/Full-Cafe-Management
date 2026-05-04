@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Phone, KeyRound, User, ArrowRight, CheckCircle2 } from "lucide-react";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { FormField } from "@/components/ui/form-field";
+import { Phone, KeyRound, User, ArrowRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -17,42 +19,86 @@ export default function CustomerLoginPage() {
   const [otp, setOtp] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [phoneError, setPhoneError] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [nameError, setNameError] = useState("");
 
-  const handleSendOtp = () => {
+  // Resend OTP timer
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
+
+  const handleSendOtp = async () => {
     const cleaned = phone.replace(/\D/g, "");
     if (cleaned.length < 10) {
-      toast.error("Please enter a valid 10-digit mobile number");
+      setPhoneError("Please enter a valid 10-digit mobile number");
       return;
     }
+    setPhoneError("");
+    setLoading(true);
+    
+    // Simulate network delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     const code = sendOtp(cleaned);
     setGeneratedOtp(code);
     setStep("otp");
+    setResendTimer(30);
+    setLoading(false);
     toast.success("OTP sent to your mobile!");
   };
 
-  const handleVerifyOtp = () => {
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const cleaned = phone.replace(/\D/g, "");
+    const code = sendOtp(cleaned);
+    setGeneratedOtp(code);
+    setResendTimer(30);
+    setLoading(false);
+    toast.success("New OTP sent!");
+  };
+
+  const handleVerifyOtp = async () => {
     if (otp.length !== 4) {
-      toast.error("Please enter the 4-digit OTP");
+      setOtpError("Please enter the 4-digit OTP");
       return;
     }
     if (otp !== generatedOtp) {
-      toast.error("Invalid OTP. Please try again.");
+      setOtpError("Invalid OTP. Please check and try again");
       return;
     }
+    setOtpError("");
     setStep("name");
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!name.trim()) {
-      toast.error("Please enter your name");
+      setNameError("Please enter your name");
       return;
     }
+    if (name.trim().length < 2) {
+      setNameError("Name must be at least 2 characters");
+      return;
+    }
+    setNameError("");
+    setLoading(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
     const cleaned = phone.replace(/\D/g, "");
     const success = verifyOtp(cleaned, otp, name.trim());
     if (success) {
       toast.success(`Welcome, ${name.trim()}! 🎉`);
       navigate("/menu");
     } else {
+      setLoading(false);
       toast.error("Verification failed. Please try again.");
     }
   };
@@ -106,93 +152,111 @@ export default function CustomerLoginPage() {
 
           <AnimatePresence mode="wait">
             {step === "phone" && (
-              <motion.div key="phone" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Mobile Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="tel"
-                      placeholder="Enter 10-digit mobile number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="pl-10 bg-secondary border-border rounded-xl h-12 text-lg font-mono tracking-wider"
-                      maxLength={15}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                    />
-                  </div>
-                </div>
-                <Button
+              <motion.div key="phone" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
+                <FormField
+                  label="Mobile Number"
+                  icon={Phone}
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setPhoneError("");
+                  }}
+                  error={phoneError}
+                  helperText="We'll send a verification code to this number"
+                  maxLength={15}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+                />
+                <LoadingButton
                   onClick={handleSendOtp}
+                  loading={loading}
+                  loadingText="Sending..."
                   disabled={phone.replace(/\D/g, "").length < 10}
                   className="w-full bg-gradient-to-r from-vibe-purple to-neon-pink text-white hover:opacity-90 font-bold py-6 rounded-full text-base"
                 >
                   Send OTP <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                </LoadingButton>
               </motion.div>
             )}
 
             {step === "otp" && (
-              <motion.div key="otp" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+              <motion.div key="otp" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
                 {/* Simulated OTP display */}
-                <div className="bg-neon-green/10 border border-neon-green/30 rounded-xl p-3 text-center">
+                <div className="bg-neon-green/10 border border-neon-green/30 rounded-xl p-4 text-center">
                   <p className="text-xs text-muted-foreground mb-1">📱 Simulated SMS</p>
                   <p className="text-sm">Your Aureum OTP is: <span className="font-mono font-bold text-neon-green text-lg">{generatedOtp}</span></p>
                 </div>
 
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Enter OTP</label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="4-digit OTP"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      className="pl-10 bg-secondary border-border rounded-xl h-12 text-2xl font-mono tracking-[0.5em] text-center"
-                      maxLength={4}
-                      onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
-                    />
-                  </div>
+                <FormField
+                  label="Enter OTP"
+                  icon={KeyRound}
+                  type="text"
+                  placeholder="4-digit OTP"
+                  value={otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 4));
+                    setOtpError("");
+                  }}
+                  error={otpError}
+                  maxLength={4}
+                  className="[&_input]:text-2xl [&_input]:tracking-[0.5em] [&_input]:text-center"
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+                />
+
+                {/* Resend OTP */}
+                <div className="text-center">
+                  <button
+                    onClick={handleResendOtp}
+                    disabled={resendTimer > 0 || loading}
+                    className="text-sm text-vibe-purple hover:text-vibe-violet disabled:text-muted-foreground transition-colors inline-flex items-center gap-1"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                  </button>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setStep("phone")} className="flex-1 rounded-full border-border">
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep("phone")} className="flex-1 rounded-full border-border h-12">
                     Back
                   </Button>
-                  <Button
+                  <LoadingButton
                     onClick={handleVerifyOtp}
+                    loading={loading}
+                    loadingText="Verifying..."
                     disabled={otp.length !== 4}
-                    className="flex-1 bg-gradient-to-r from-vibe-purple to-neon-pink text-white hover:opacity-90 font-bold rounded-full"
+                    className="flex-1 bg-gradient-to-r from-vibe-purple to-neon-pink text-white hover:opacity-90 font-bold rounded-full h-12"
                   >
                     Verify <CheckCircle2 className="ml-2 h-4 w-4" />
-                  </Button>
+                  </LoadingButton>
                 </div>
               </motion.div>
             )}
 
             {step === "name" && (
-              <motion.div key="name" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Your Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Enter your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10 bg-secondary border-border rounded-xl h-12"
-                      onKeyDown={(e) => e.key === "Enter" && handleComplete()}
-                    />
-                  </div>
-                </div>
-                <Button
+              <motion.div key="name" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
+                <FormField
+                  label="Your Name"
+                  icon={User}
+                  placeholder="Enter your full name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setNameError("");
+                  }}
+                  error={nameError}
+                  helperText="This will be used for your orders"
+                  onKeyDown={(e) => e.key === "Enter" && handleComplete()}
+                />
+                <LoadingButton
                   onClick={handleComplete}
+                  loading={loading}
+                  loadingText="Creating account..."
                   disabled={!name.trim()}
                   className="w-full bg-gradient-to-r from-neon-green to-vibe-purple text-white hover:opacity-90 font-bold py-6 rounded-full text-base"
                 >
                   Continue to Menu 🎉
-                </Button>
+                </LoadingButton>
               </motion.div>
             )}
           </AnimatePresence>

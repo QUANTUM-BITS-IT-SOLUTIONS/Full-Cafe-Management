@@ -104,18 +104,8 @@ export function Team() {
   }
 
   return (
-    <div className="relative py-32 bg-background w-full" style={{ 
-      overflow: 'visible', 
-      height: 'auto', 
-      minHeight: '0', 
-      maxHeight: 'none' 
-    }}>
-      <div className="container mx-auto px-6 sm:px-8 lg:px-12" style={{ 
-        overflow: 'visible', 
-        height: 'auto', 
-        minHeight: '0', 
-        maxHeight: 'none' 
-      }}>
+    <div className="relative py-16 sm:py-24 lg:py-32 bg-background w-full">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -127,37 +117,22 @@ export function Team() {
             <div className="w-3 h-3 bg-accent-blue rounded-full animate-pulse" />
           </div>
           
-          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-8 text-foreground">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight mb-8 text-foreground">
             <span className="block mb-2">These people are</span>
             <span className="block text-foreground">WANTED</span>
           </h2>
           
-          <p className="text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Highly skilled and creatively dangerous
           </p>
         </div>
 
         {/* Framed Wanted Board */}
-        <div className="max-w-7xl mx-auto" style={{ 
-          overflow: 'visible', 
-          height: 'auto', 
-          minHeight: '0', 
-          maxHeight: 'none' 
-        }}>
-          <div className="relative" style={{ 
-            overflow: 'visible', 
-            height: 'auto', 
-            minHeight: '0', 
-            maxHeight: 'none' 
-          }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="relative">
             
             {/* Black Frame */}
-            <div className="bg-gradient-to-br from-black via-gray-900 to-black p-8 rounded-2xl shadow-2xl relative border border-gray-800/50" style={{ 
-              overflow: 'visible', 
-              height: 'auto', 
-              minHeight: '0', 
-              maxHeight: 'none' 
-            }}>
+            <div className="bg-gradient-to-br from-black via-gray-900 to-black p-4 sm:p-8 rounded-2xl shadow-2xl relative border border-gray-800/50">
               
               {/* Black frame texture */}
               <div className="absolute inset-0 opacity-15"
@@ -171,12 +146,7 @@ export function Team() {
                    }} />
               
               {/* Modern Board Background */}
-              <div className="bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 rounded-xl p-8 relative border border-slate-300/50" style={{ 
-                overflow: 'visible', 
-                height: 'auto', 
-                minHeight: '0', 
-                maxHeight: 'none' 
-              }}>
+              <div className="bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 rounded-xl p-4 sm:p-8 relative border border-slate-300/50">
                 
                 {/* Modern subtle texture */}
                 <div className="absolute inset-0 opacity-30"
@@ -190,39 +160,20 @@ export function Team() {
                      }} />
 
                 {/* Wanted Posters Grid */}
-                <div className="relative z-10" style={{ 
-                  overflow: 'visible', 
-                  height: 'auto', 
-                  minHeight: '0', 
-                  maxHeight: 'none' 
-                }}>
+                <div className="relative z-10">
                   {/* First row - 4 posters */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-8" style={{ 
-                    overflow: 'visible', 
-                    height: 'auto', 
-                    minHeight: '0', 
-                    maxHeight: 'none' 
-                  }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8">
                     {wantedCriminals.slice(0, 4).map((criminal, index) => (
                       <div
                         key={criminal.name}
                         className={`group transform ${criminal.rotation} hover:rotate-0 transition-all duration-500 hover:scale-105 hover:z-20`}
                         style={{
-                          filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.3))',
-                          overflow: 'visible',
-                          height: 'auto',
-                          minHeight: '0',
-                          maxHeight: 'none'
+                          filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.3))'
                         }}
                       >
                         
                         {/* Black Framed Wanted Poster */}
-                        <div className="bg-gradient-to-b from-white to-gray-50 border-4 border-black relative shadow-lg" style={{ 
-                          overflow: 'visible', 
-                          height: 'auto', 
-                          minHeight: '0', 
-                          maxHeight: 'none' 
-                        }}>
+                        <div className="bg-gradient-to-b from-white to-gray-50 border-2 sm:border-4 border-black relative shadow-lg">
                           
                           {/* Modern push pins */}
                           <div className="absolute -top-2 left-4 w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded-full shadow-lg border border-red-700" />
@@ -248,9 +199,7 @@ export function Team() {
                             </div>
 
                             {/* Photo */}
-                            <div className="relative mb-4 mx-auto w-32 h-32 border-2 border-black bg-gray-100 rounded-sm" style={{ 
-                              overflow: 'visible' 
-                            }}>
+                            <div className="relative mb-4 mx-auto w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 border-2 border-black bg-gray-100 rounded-sm">
                               <ImageWithFallback
                                 src={criminal.image}
                                 alt={criminal.name}
@@ -285,32 +234,18 @@ export function Team() {
                   </div>
                   
                   {/* Second row - 3 posters centered */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-5xl mx-auto" style={{ 
-                    overflow: 'visible', 
-                    height: 'auto', 
-                    minHeight: '0', 
-                    maxHeight: 'none' 
-                  }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 max-w-5xl mx-auto">
                     {wantedCriminals.slice(4, 7).map((criminal, index) => (
                       <div
                         key={criminal.name}
                         className={`group transform ${criminal.rotation} hover:rotate-0 transition-all duration-500 hover:scale-105 hover:z-20`}
                         style={{
-                          filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.3))',
-                          overflow: 'visible',
-                          height: 'auto',
-                          minHeight: '0',
-                          maxHeight: 'none'
+                          filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.3))'
                         }}
                       >
                         
                         {/* Black Framed Wanted Poster */}
-                        <div className="bg-gradient-to-b from-white to-gray-50 border-4 border-black relative shadow-lg" style={{ 
-                          overflow: 'visible', 
-                          height: 'auto', 
-                          minHeight: '0', 
-                          maxHeight: 'none' 
-                        }}>
+                        <div className="bg-gradient-to-b from-white to-gray-50 border-2 sm:border-4 border-black relative shadow-lg">
                           
                           {/* Modern push pins */}
                           <div className="absolute -top-2 left-4 w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded-full shadow-lg border border-red-700" />
@@ -336,9 +271,7 @@ export function Team() {
                             </div>
 
                             {/* Photo */}
-                            <div className="relative mb-4 mx-auto w-32 h-32 border-2 border-black bg-gray-100 rounded-sm" style={{ 
-                              overflow: 'visible' 
-                            }}>
+                            <div className="relative mb-4 mx-auto w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 border-2 border-black bg-gray-100 rounded-sm">
                               <ImageWithFallback
                                 src={criminal.image}
                                 alt={criminal.name}

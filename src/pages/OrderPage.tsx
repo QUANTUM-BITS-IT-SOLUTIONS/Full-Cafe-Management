@@ -5,15 +5,21 @@ import { useLoyalty } from "@/context/LoyaltyContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useOrderHistory } from "@/context/OrderHistoryContext";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, Trash2, ShoppingBag, Zap, PartyPopper, Award, AlertTriangle, LogIn, CreditCard } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { BackButton } from "@/components/ui/back-button";
+import { Minus, Plus, Trash2, ShoppingBag, Zap, PartyPopper, Award, AlertTriangle, LogIn, CreditCard, Coffee } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import PaymentModal from "@/components/PaymentModal";
 
-function fireConfetti() {
+function fireConfetti(prefersReducedMotion: boolean) {
+  if (prefersReducedMotion) return;
   const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
   const end = Date.now() + 1500;
   const interval = setInterval(() => {
@@ -29,10 +35,13 @@ export default function OrderPage() {
   const { customer, isLoggedIn } = useCustomerAuth();
   const { addOrder } = useOrderHistory();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() || false;
   const [pickupTime, setPickupTime] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
+  const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const name = customer?.name || "";
 
@@ -88,8 +97,19 @@ export default function OrderPage() {
 
     toast.success("Order placed — ingredients deducted ✨");
     setSubmitted(true);
+    setLoading(false);
     clearCart();
-    fireConfetti();
+    fireConfetti(prefersReducedMotion);
+  };
+
+  const handleClearCart = () => {
+    setShowClearCartConfirm(true);
+  };
+
+  const confirmClearCart = () => {
+    clearCart();
+    toast.success("Cart cleared");
+    setShowClearCartConfirm(false);
   };
 
   // Not logged in
@@ -114,7 +134,7 @@ export default function OrderPage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
-          <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}>
+          <motion.div animate={prefersReducedMotion ? {} : { rotate: [0, -10, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}>
             <PartyPopper className="h-20 w-20 text-neon-pink mx-auto" />
           </motion.div>
           <h2 className="font-serif text-4xl md:text-5xl">ORDER <span className="text-gold-gradient">CONFIRMED</span>!</h2>
@@ -147,24 +167,24 @@ export default function OrderPage() {
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-orange/10 border border-neon-orange/30 text-neon-orange text-xs font-mono uppercase tracking-wider mb-4">
-            <ShoppingBag className="h-3 w-3" /> Your Cart
-          </span>
-          <h1 className="font-serif text-4xl md:text-5xl">CHECK<span className="text-gold-gradient">OUT</span></h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Logged in as <span className="text-vibe-purple font-semibold">{name}</span> · {customer?.phone}
-          </p>
-        </motion.div>
+        <BackButton to="/menu" className="mb-4" />
+        <PageHeader
+          badge={{ text: `Your Cart · ${itemCount} items`, icon: ShoppingBag }}
+          title="CHECK"
+          highlight="OUT"
+          description={`Logged in as ${name} · ${customer?.phone}`}
+        />
 
         {items.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 space-y-4">
-            <span className="text-5xl block">🛒</span>
-            <p className="text-muted-foreground text-lg">Your cart is empty.</p>
-            <Button asChild variant="outline" className="border-vibe-purple/30 text-vibe-purple hover:bg-vibe-purple/10 rounded-full">
-              <Link to="/menu">Browse Menu ✨</Link>
-            </Button>
-          </motion.div>
+          <EmptyState
+            icon={Coffee}
+            title="Your cart is empty"
+            description="Looks like you haven't added any items yet. Browse our menu to find something delicious!"
+            action={{
+              label: "Browse Menu",
+              onClick: () => navigate("/menu"),
+            }}
+          />
         ) : (
           <div className="space-y-8">
             {unavailableItems.length > 0 && (
@@ -198,7 +218,14 @@ export default function OrderPage() {
                       <motion.button whileTap={{ scale: 0.8 }} onClick={() => updateQuantity(index, item.quantity + 1)} className="p-1.5 text-muted-foreground hover:text-foreground bg-secondary rounded-lg"><Plus className="h-3 w-3" /></motion.button>
                     </div>
                     <p className="text-vibe-purple font-bold text-sm font-mono w-16 text-right">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
-                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => removeItem(index)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.8 }}
+                      onClick={() => removeItem(index)}
+                      className="text-muted-foreground hover:text-destructive p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"
+                      title="Remove item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </motion.button>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -237,18 +264,30 @@ export default function OrderPage() {
                 </div>
               </div>
               <Input type="text" placeholder="e.g. 10:30 AM" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="bg-secondary border-border rounded-xl h-12" />
-              <Button
+              <LoadingButton
                 onClick={handleProceedToPayment}
+                loading={loading}
+                loadingText="Processing..."
                 disabled={!pickupTime || unavailableItems.length > 0}
                 className="w-full bg-gradient-to-r from-vibe-purple via-neon-pink to-neon-orange text-white hover:opacity-90 font-bold py-6 rounded-full text-base"
               >
                 <CreditCard className="mr-2 h-4 w-4" /> Pay & Place Order
+              </LoadingButton>
+
+              {/* Clear Cart Button */}
+              <Button
+                variant="ghost"
+                onClick={handleClearCart}
+                className="w-full text-muted-foreground hover:text-destructive"
+              >
+                Clear Cart
               </Button>
             </div>
           </div>
         )}
       </div>
 
+      {/* Payment Modal */}
       {showPayment && (
         <PaymentModal
           amount={total}
@@ -256,6 +295,17 @@ export default function OrderPage() {
           onCancel={() => setShowPayment(false)}
         />
       )}
+
+      {/* Clear Cart Confirmation */}
+      <ConfirmDialog
+        open={showClearCartConfirm}
+        onOpenChange={setShowClearCartConfirm}
+        title="Clear Cart?"
+        description="This will remove all items from your cart. This action cannot be undone."
+        confirmLabel="Clear Cart"
+        onConfirm={confirmClearCart}
+        variant="destructive"
+      />
     </div>
   );
 }

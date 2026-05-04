@@ -98,7 +98,7 @@ export function Services() {
             <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
           </div>
           
-          <h2 className={`text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6 text-amber-100 transform transition-all duration-1000 delay-200 ${
+          <h2 className={`text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 text-amber-100 transform transition-all duration-1000 delay-200 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'
           }`}>
             What We Develop
@@ -268,7 +268,7 @@ export function Services() {
                   </div>
                   
                   {/* Photo */}
-                  <div className="relative bg-white p-4 pb-8 shadow-2xl cursor-pointer w-[260px] sm:w-[280px] max-w-[90vw]"
+                  <div className="relative bg-white p-3 sm:p-4 pb-6 sm:pb-8 shadow-2xl cursor-pointer w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px] max-w-[85vw]"
                        style={{
                          filter: hoveredPhoto === service.id ? 'brightness(1.1) contrast(1.05)' : 'brightness(1) contrast(0.95)',
                          boxShadow: `
@@ -279,7 +279,7 @@ export function Services() {
                        }}>
                     
                     {/* Photo Area */}
-                    <div className="h-48 mb-6 rounded-sm relative">
+                    <div className="h-36 sm:h-40 md:h-48 mb-4 sm:mb-6 rounded-sm relative">
                       <ImageWithFallback
                         src={service.image}
                         alt={service.title}
@@ -479,7 +479,7 @@ export function Services() {
                   </div>
                   
                   {/* Photo - Same structure as above */}
-                  <div className="relative bg-white p-4 pb-8 shadow-2xl cursor-pointer w-[260px] sm:w-[280px] max-w-[90vw]"
+                  <div className="relative bg-white p-3 sm:p-4 pb-6 sm:pb-8 shadow-2xl cursor-pointer w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px] max-w-[85vw]"
                        style={{
                          filter: hoveredPhoto === service.id ? 'brightness(1.1) contrast(1.05)' : 'brightness(1) contrast(0.95)',
                          boxShadow: `
@@ -489,7 +489,7 @@ export function Services() {
                          `
                        }}>
                     
-                    <div className="h-48 mb-6 rounded-sm relative">
+                    <div className="h-36 sm:h-40 md:h-48 mb-4 sm:mb-6 rounded-sm relative">
                       <ImageWithFallback
                         src={service.image}
                         alt={service.title}
@@ -499,7 +499,7 @@ export function Services() {
                         }}
                       />
                       <div className="absolute inset-0 bg-red-900/5 rounded-sm" />
-                      <div className="absolute inset-0 opacity-[0.03] rounded-sm" 
+                      <div className="absolute inset-0 opacity-[0.03] rounded-sm"
                            style={{
                              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(139,69,19,0.8) 1px, transparent 0)`,
                              backgroundSize: '3px 3px'

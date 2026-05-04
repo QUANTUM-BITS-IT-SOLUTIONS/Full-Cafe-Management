@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Zap, Star, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { menuItems } from "@/data/menu";
 import { useRef } from "react";
 import genzHero from "@/assets/genz-hero.jpg";
@@ -10,10 +10,11 @@ import genzFlatlay from "@/assets/genz-flatlay.jpg";
 export default function LandingPage() {
   const featured = menuItems.slice(0, 4);
   const heroRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion() || false;
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [0, 0] : [0, 150]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [1, 1] : [1, 1.1]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], prefersReducedMotion ? [1, 1] : [1, 0]);
 
   return (
     <div className="overflow-hidden">
@@ -53,7 +54,7 @@ export default function LandingPage() {
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-7xl md:text-9xl lg:text-[10rem] font-serif leading-none"
+              className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] font-serif leading-none"
             >
               <span className="text-gold-gradient">AUREUM</span>
             </motion.h1>

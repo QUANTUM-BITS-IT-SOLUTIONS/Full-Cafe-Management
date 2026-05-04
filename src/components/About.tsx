@@ -6,6 +6,16 @@ import storyboardImage from '@/assets/storyboard-image.avif'
 export function About() {
   const [activeFrame, setActiveFrame] = useState(-1)
   const [animationStarted, setAnimationStarted] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   const processSteps = [
     {
@@ -41,17 +51,28 @@ export function About() {
   ]
 
   useEffect(() => {
+    if (prefersReducedMotion) {
+      setAnimationStarted(true)
+      setActiveFrame(processSteps.length - 1)
+      return
+    }
+
+    const timeouts: NodeJS.Timeout[] = []
+
     // Start film animation after a 3 second pause
-    setTimeout(() => {
+    const startTimeout = setTimeout(() => {
       setAnimationStarted(true)
       processSteps.forEach((_, index) => {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           setActiveFrame(index)
-         
-        }, index * 2000 + 1000) // Ultra slow: Start after 24s, then every 72s
+        }, index * 2000 + 1000)
+        timeouts.push(timeout)
       })
-    }, 3000) // 3 second pause after section loads
-  }, [])
+    }, 3000)
+    timeouts.push(startTimeout)
+
+    return () => timeouts.forEach(clearTimeout)
+  }, [prefersReducedMotion])
 
   return (
     <section id="about" className="relative py-20 bg-background overflow-hidden">
