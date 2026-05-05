@@ -4,6 +4,7 @@ import { useInventory } from "@/context/InventoryContext";
 import { useLoyalty } from "@/context/LoyaltyContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useOrderHistory } from "@/context/OrderHistoryContext";
+import { useCoupon } from "@/context/CouponContext";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { BackButton } from "@/components/ui/back-button";
+import TimeScroller from "@/components/ui/time-scroller";
 import { Minus, Plus, Trash2, ShoppingBag, Zap, PartyPopper, Award, AlertTriangle, LogIn, CreditCard, Coffee } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -42,8 +44,21 @@ export default function OrderPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  
+  const { appliedCoupon } = useCoupon();
 
   const name = customer?.name || "";
+  const tax = total * 0.08;
+  
+  // Calculate discount
+  let discount = 0;
+  if (appliedCoupon && appliedCoupon.discount > 0) {
+    discount = Math.min((total * appliedCoupon.discount) / 100, appliedCoupon.maxDiscount || Infinity);
+  }
+  
+  const discountedTotal = total - discount;
+  const finalTotal = discountedTotal + tax;
 
   const unavailableItems = items
     .map((item) => {
@@ -204,28 +219,80 @@ export default function OrderPage() {
             <div className="space-y-3">
               <AnimatePresence>
                 {items.map((item, index) => (
-                  <motion.div key={index} layout initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} whileHover={{ scale: 1.01 }} className="glass-card rounded-2xl p-4 flex items-center gap-4">
-                    <img src={item.menuItem.image} alt={item.menuItem.name} className="w-16 h-16 rounded-xl object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-serif text-sm font-semibold">{item.menuItem.name}</h3>
-                      {item.size && <p className="text-xs text-muted-foreground">{item.size}</p>}
-                      {item.milk && <p className="text-xs text-muted-foreground">{item.milk}</p>}
-                      {item.extras && item.extras.length > 0 && <p className="text-xs text-muted-foreground">+ {item.extras.join(", ")}</p>}
+                  <motion.div
+                    key={index}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    whileHover={{ scale: 1.01 }}
+                    className="glass-card rounded-2xl p-3 md:p-4"
+                  >
+                    {/* Mobile: Stack layout | Desktop: Row layout */}
+                    <div className="flex gap-3 md:items-center">
+                      <img src={item.menuItem.image} alt={item.menuItem.name} className="w-14 h-14 md:w-16 md:h-16 rounded-xl object-cover shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold truncate">{item.menuItem.name}</h3>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          {item.size && <p>{item.size}</p>}
+                          {item.milk && <p>{item.milk}</p>}
+                          {item.extras && item.extras.length > 0 && <p className="truncate">+ {item.extras.join(", ")}</p>}
+                        </div>
+                      </div>
+                      {/* Desktop only: Price and delete */}
+                      <div className="hidden md:flex items-center gap-3">
+                        <p className="text-vibe-purple font-bold text-sm font-mono w-14 text-right">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => removeItem(index)}
+                          className="text-muted-foreground hover:text-destructive p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                          title="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </motion.button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <motion.button whileTap={{ scale: 0.8 }} onClick={() => updateQuantity(index, item.quantity - 1)} className="p-1.5 text-muted-foreground hover:text-foreground bg-secondary rounded-lg"><Minus className="h-3 w-3" /></motion.button>
-                      <span className="text-sm w-6 text-center font-mono font-bold">{item.quantity}</span>
-                      <motion.button whileTap={{ scale: 0.8 }} onClick={() => updateQuantity(index, item.quantity + 1)} className="p-1.5 text-muted-foreground hover:text-foreground bg-secondary rounded-lg"><Plus className="h-3 w-3" /></motion.button>
+
+                    {/* Mobile: Bottom row with qty controls, price, delete */}
+                    <div className="flex items-center justify-between mt-3 md:mt-0 md:hidden">
+                      <div className="flex items-center gap-2">
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => updateQuantity(index, item.quantity - 1)}
+                          className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground bg-secondary rounded-lg active:bg-secondary/80"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </motion.button>
+                        <span className="text-sm w-8 text-center font-mono font-bold">{item.quantity}</span>
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => updateQuantity(index, item.quantity + 1)}
+                          className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground bg-secondary rounded-lg active:bg-secondary/80"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </motion.button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-vibe-purple font-bold text-base font-mono">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => removeItem(index)}
+                          className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          title="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </motion.button>
+                      </div>
                     </div>
-                    <p className="text-vibe-purple font-bold text-sm font-mono w-16 text-right">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
-                    <motion.button
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => removeItem(index)}
-                      className="text-muted-foreground hover:text-destructive p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"
-                      title="Remove item"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </motion.button>
+
+                    {/* Desktop: Qty controls inline */}
+                    <div className="hidden md:flex items-center justify-end gap-3 mt-2">
+                      <div className="flex items-center gap-2">
+                        <motion.button whileTap={{ scale: 0.8 }} onClick={() => updateQuantity(index, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground bg-secondary rounded-lg"><Minus className="h-3 w-3" /></motion.button>
+                        <span className="text-sm w-6 text-center font-mono font-bold">{item.quantity}</span>
+                        <motion.button whileTap={{ scale: 0.8 }} onClick={() => updateQuantity(index, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground bg-secondary rounded-lg"><Plus className="h-3 w-3" /></motion.button>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -233,22 +300,31 @@ export default function OrderPage() {
 
             <div className="glass-card rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold">Total ({itemCount} items)</span>
-                <span className="text-2xl font-serif font-bold text-gold-gradient">${total.toFixed(2)}</span>
+                <span className="font-semibold">Subtotal ({itemCount} items)</span>
+                <span className="text-xl font-serif font-bold">${total.toFixed(2)}</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex items-center justify-between text-sm text-neon-green">
+                  <span className="flex items-center gap-1">
+                    <Award className="h-3.5 w-3.5" />
+                    Discount ({appliedCoupon.discount}%)
+                  </span>
+                  <span className="font-mono font-bold">-${discount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Tax (8%)</span>
-                <span className="font-mono text-muted-foreground">${(total * 0.08).toFixed(2)}</span>
+                <span className="font-mono text-muted-foreground">${tax.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-sm border-t border-border pt-2">
                 <span className="font-semibold">Grand Total</span>
-                <span className="text-lg font-serif font-bold text-gold-gradient">${(total * 1.08).toFixed(2)}</span>
+                <span className="text-lg font-serif font-bold text-gold-gradient">${finalTotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1.5">
                   <Award className="h-3.5 w-3.5 text-neon-yellow" /> Points you'll earn
                 </span>
-                <span className="text-neon-yellow font-mono font-bold">+{Math.floor(total * 10)} pts</span>
+                <span className="text-neon-yellow font-mono font-bold">+{Math.floor(discountedTotal * 10)} pts</span>
               </div>
             </div>
 
@@ -263,7 +339,11 @@ export default function OrderPage() {
                   <p className="text-xs text-muted-foreground">{customer?.phone}</p>
                 </div>
               </div>
-              <Input type="text" placeholder="e.g. 10:30 AM" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="bg-secondary border-border rounded-xl h-12" />
+              <TimeScroller
+                value={pickupTime}
+                onChange={setPickupTime}
+                disabled={loading}
+              />
               <LoadingButton
                 onClick={handleProceedToPayment}
                 loading={loading}
@@ -271,7 +351,7 @@ export default function OrderPage() {
                 disabled={!pickupTime || unavailableItems.length > 0}
                 className="w-full bg-gradient-to-r from-vibe-purple via-neon-pink to-neon-orange text-white hover:opacity-90 font-bold py-6 rounded-full text-base"
               >
-                <CreditCard className="mr-2 h-4 w-4" /> Pay & Place Order
+                <CreditCard className="mr-2 h-4 w-4" /> Pay ${finalTotal.toFixed(2)}
               </LoadingButton>
 
               {/* Clear Cart Button */}
@@ -291,6 +371,9 @@ export default function OrderPage() {
       {showPayment && (
         <PaymentModal
           amount={total}
+          couponCode={couponCode}
+          onCouponApply={(code) => setCouponCode(code)}
+          onCouponRemove={() => setCouponCode("")}
           onSuccess={handlePaymentSuccess}
           onCancel={() => setShowPayment(false)}
         />

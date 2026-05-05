@@ -6,11 +6,13 @@ import { LoyaltyProvider } from "@/context/LoyaltyContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { CustomerAuthProvider } from "@/context/CustomerAuthContext";
 import { OrderHistoryProvider } from "@/context/OrderHistoryContext";
+import { CouponProvider } from "@/context/CouponContext";
 import { Toaster } from "@/components/ui/sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import CustomerLayout from "@/layouts/CustomerLayout";
 import AdminLayout from "@/layouts/AdminLayout";
 import InventoryLayout from "@/layouts/InventoryLayout";
+import ScrollToTop from "@/components/ScrollToTop";
 import LandingPage from "@/pages/LandingPage";
 import MenuPage from "@/pages/MenuPage";
 import OrderPage from "@/pages/OrderPage";
@@ -36,12 +38,14 @@ import NotFound from "@/pages/NotFound";
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ThemeProvider>
         <AuthProvider>
           <LoyaltyProvider>
             <CartProvider>
               <CustomerAuthProvider>
               <OrderHistoryProvider>
+              <CouponProvider>
               <InventoryProvider>
                 <Routes>
                   {/* Customer — open access */}
@@ -82,6 +86,7 @@ export default function App() {
                 </Routes>
                 <Toaster />
               </InventoryProvider>
+              </CouponProvider>
               </OrderHistoryProvider>
               </CustomerAuthProvider>
             </CartProvider>

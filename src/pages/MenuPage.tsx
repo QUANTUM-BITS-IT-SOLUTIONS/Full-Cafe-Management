@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Sparkles, Coffee, X } from "lucide-react";
+import { Search, Plus, Sparkles, Coffee, X, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,12 +10,13 @@ import { useCart } from "@/context/CartContext";
 import { useInventory } from "@/context/InventoryContext";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { addItem } = useCart();
+  const { addItem, itemCount } = useCart();
   const { checkAvailability } = useInventory();
   const prefersReducedMotion = useReducedMotion() || false;
 
@@ -146,6 +147,32 @@ export default function MenuPage() {
           />
         ) : null}
       </div>
+
+      {/* Floating Cart Button - Mobile Only */}
+      <motion.div
+        initial={{ scale: 0, y: 100 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ delay: 0.5, type: "spring" }}
+        className="md:hidden fixed bottom-6 right-6 z-40"
+      >
+        <Link to="/order">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-vibe-purple to-neon-pink text-white shadow-lg shadow-vibe-purple/30 flex items-center justify-center relative"
+          >
+            <ShoppingBag className="h-6 w-6" />
+            {itemCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 bg-neon-yellow text-background text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
+              >
+                {itemCount > 9 ? "9+" : itemCount}
+              </motion.span>
+            )}
+          </motion.button>
+        </Link>
+      </motion.div>
     </div>
   );
 }

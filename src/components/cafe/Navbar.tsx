@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Coffee, ShoppingBag, Menu, X, Sun, Moon, Award, User, LogIn, LogOut } from "lucide-react";
+import { Coffee, ShoppingBag, LogOut, LogIn, Award, Moon, Sun, ChevronDown, Menu, X, Package } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useLoyalty } from "@/context/LoyaltyContext";
@@ -52,7 +52,9 @@ export default function Navbar() {
               transition={{ duration: 0.6 }}
               className="w-9 h-9 rounded-xl bg-gradient-to-br from-vibe-purple to-neon-pink flex items-center justify-center"
             >
-              <Coffee className="h-4 w-4 text-white" />
+              <div className="coffee-emblem w-6 h-6">
+                <Coffee className="h-3 w-3 text-coffee" />
+              </div>
             </motion.div>
             <span className="font-serif text-xl font-bold text-gold-gradient uppercase tracking-wide">Aureum</span>
           </Link>
@@ -63,10 +65,8 @@ export default function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-sm font-medium transition-all relative px-3 py-1.5 rounded-full ${
-                  isActive(link.to)
-                    ? "text-foreground bg-vibe-purple/20 border border-vibe-purple/30"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(link.to) ? "bg-gradient-to-r from-gold/20 to-amber/20 text-gold border border-gold/30" : "text-muted-foreground hover:text-gold hover:bg-gradient-to-r hover:from-gold/10 hover:to-amber/10"
                 }`}
               >
                 {link.label}
@@ -116,7 +116,7 @@ export default function Navbar() {
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-neon-pink text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
+                  className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-amber to-gold rounded-full flex items-center justify-center text-xs font-bold text-coffee gold-glow"
                 >
                   {itemCount}
                 </motion.span>
@@ -125,6 +125,11 @@ export default function Navbar() {
             {/* Auth button */}
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
+                <div className="coffee-emblem w-8 h-8">
+                  <Coffee className="h-4 w-4 text-coffee" />
+                </div>
+                <span className="font-cafe-heading text-lg text-gold-gradient">Aureum Cafe</span>
+                <p className="text-xs text-muted-foreground mt-1 font-cafe-accent">Premium Coffee</p>
                 <span className="text-xs text-muted-foreground font-mono">{customer?.name}</span>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
@@ -136,12 +141,18 @@ export default function Navbar() {
                 </motion.button>
               </div>
             ) : (
-              <Link to="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-vibe-purple to-neon-pink text-white text-xs font-bold hover:opacity-90 transition-opacity">
+              <Link
+                to="/login"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive("/login") ? "bg-gradient-to-r from-gold to-amber text-coffee shadow-lg gold-border" : "text-muted-foreground hover:text-gold hover:bg-gradient-to-r hover:from-gold/10 hover:to-amber/10"
+                }`}
+              >
                 <LogIn className="h-3.5 w-3.5" /> Sign In
               </Link>
             )}
-            <Link to="/admin" className="text-xs text-muted-foreground hover:text-vibe-purple transition-colors border border-border rounded-full px-4 py-2 font-mono">
-              admin
+            <Link to="/inventory" className="flex items-center gap-2 px-3 py-2 text-sm text-gold hover:text-amber transition-colors">
+              <Package className="h-4 w-4" />
+              Inventory
             </Link>
           </div>
 
@@ -152,6 +163,24 @@ export default function Navbar() {
               <Award className="h-3 w-3" />
               <span className="font-bold">{points}</span>
             </div>
+            {/* Mobile Cart */}
+            <Link to="/order" className="relative">
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="w-9 h-9 rounded-full bg-vibe-purple/10 border border-vibe-purple/30 flex items-center justify-center"
+              >
+                <ShoppingBag className="h-4 w-4 text-vibe-purple" />
+              </motion.div>
+              {itemCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 bg-neon-pink text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold"
+                >
+                  {itemCount > 9 ? "9+" : itemCount}
+                </motion.span>
+              )}
+            </Link>
             <motion.button
               whileTap={{ scale: 0.85, rotate: 180 }}
               onClick={toggleTheme}
@@ -161,7 +190,7 @@ export default function Navbar() {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.9 }}
-              className="text-foreground"
+              className="text-foreground w-9 h-9 flex items-center justify-center"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -184,7 +213,7 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileOpen(false)}
-                  className={`block text-base font-medium ${isActive(link.to) ? "text-vibe-purple" : "text-muted-foreground"}`}
+                  className={`text-xs whitespace-nowrap px-2 py-1 rounded font-cafe-accent ${isActive(link.to) ? "text-gold bg-gradient-to-r from-gold/20 to-amber/20" : "text-muted-foreground hover:text-gold"}`}
                 >
                   {link.label}
                 </Link>
